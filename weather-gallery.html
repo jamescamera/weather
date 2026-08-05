@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#12100E">
+<title>Today's Weather, Painted</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --gallery:#12100E;      /* warm near-black: the wall the work hangs on */
+    --paper:#EDE9E0;        /* the label card */
+    --ink:#1A1A18;
+    --ink-soft:#5C574E;
+    --rule:#C9C2B4;
+    --label-w: 340px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--gallery);
+    color:var(--paper);
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---- the work ---- */
+  #stage{position:fixed;inset:0;overflow:hidden;background:var(--gallery)}
+  .plate{
+    position:absolute;inset:0;
+    background-size:cover;background-position:center;
+    opacity:0;transition:opacity 1.6s ease;
+    will-change:transform,opacity;
+    animation:drift 68s ease-in-out infinite alternate;
+  }
+  .plate.on{opacity:1}
+  @keyframes drift{
+    from{transform:scale(1.06) translate3d(-1.2%,-0.8%,0)}
+    to{transform:scale(1.14) translate3d(1.2%,1%,0)}
+  }
+  #veil{
+    position:fixed;inset:0;pointer-events:none;
+    background:
+      radial-gradient(120% 80% at 50% 30%, transparent 40%, rgba(8,7,6,.45) 100%),
+      linear-gradient(to top, rgba(8,7,6,.88) 0%, rgba(8,7,6,.5) 26%, transparent 58%);
+  }
+
+  /* ---- the wall label ---- */
+  #label{
+    position:fixed;left:0;right:0;bottom:0;
+    padding:24px 22px calc(24px + env(safe-area-inset-bottom));
+    display:flex;flex-direction:column;gap:14px;
+    cursor:pointer;
+  }
+  .eyebrow{
+    font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+    color:rgba(237,233,224,.62);
+  }
+  .artist{
+    font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+    color:rgba(237,233,224,.8);
+  }
+  .title{
+    font-family:"Instrument Serif",Georgia,serif;font-style:italic;
+    font-size:clamp(30px,8vw,52px);line-height:1.02;letter-spacing:-.01em;
+    text-wrap:balance;
+  }
+  .medium{font-size:12px;color:rgba(237,233,224,.62)}
+
+  /* the accession line: weather typeset as catalogue data */
+  .accession{
+    display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;
+    padding-top:14px;border-top:1px solid rgba(237,233,224,.22);
+    font-size:12px;letter-spacing:.06em;
+  }
+  .accession .temp{
+    font-family:"Instrument Serif",Georgia,serif;font-style:normal;
+    font-size:30px;letter-spacing:0;line-height:1;
+  }
+  .accession .cond{color:rgba(237,233,224,.86);text-transform:lowercase}
+  .accession .place{color:rgba(237,233,224,.55);margin-left:auto;text-align:right}
+
+  /* ---- expanded catalogue entry ---- */
+  #entry{
+    position:fixed;inset:0;background:var(--paper);color:var(--ink);
+    padding:calc(28px + env(safe-area-inset-top)) 24px calc(28px + env(safe-area-inset-bottom));
+    display:flex;flex-direction:column;gap:22px;
+    transform:translateY(101%);transition:transform .5s cubic-bezier(.16,.84,.44,1);
+    overflow-y:auto;cursor:pointer;
+  }
+  #entry.open{transform:translateY(0)}
+  #entry .eyebrow{color:var(--ink-soft)}
+  #entry h2{
+    font-family:"Instrument Serif",Georgia,serif;font-weight:400;font-style:italic;
+    font-size:clamp(26px,7vw,40px);line-height:1.05;
+  }
+  .rows{display:flex;flex-direction:column}
+  .row{
+    display:flex;justify-content:space-between;align-items:baseline;gap:16px;
+    padding:11px 0;border-bottom:1px solid var(--rule);font-size:13px;
+  }
+  .row dt{color:var(--ink-soft);letter-spacing:.14em;text-transform:uppercase;font-size:10px}
+  .row dd{text-align:right}
+  .why{
+    font-family:"Instrument Serif",Georgia,serif;font-size:19px;line-height:1.45;
+    color:var(--ink);max-width:44ch;
+  }
+  .foot{margin-top:auto;padding-top:20px;font-size:10px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--ink-soft);display:flex;justify-content:space-between;gap:12px}
+  .foot button{
+    font:inherit;letter-spacing:.16em;text-transform:uppercase;
+    background:none;border:none;border-bottom:1px solid var(--ink);
+    color:var(--ink);padding:0 0 2px;cursor:pointer;
+  }
+
+  #status{
+    position:fixed;inset:0;display:grid;place-items:center;text-align:center;
+    padding:32px;gap:12px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+    color:rgba(237,233,224,.7);background:var(--gallery);z-index:5;
+    transition:opacity .6s ease;
+  }
+  #status.gone{opacity:0;pointer-events:none}
+  #status .beat{font-family:"Instrument Serif",serif;font-style:italic;
+    font-size:26px;letter-spacing:0;text-transform:none;color:var(--paper)}
+  #status button{
+    font:inherit;letter-spacing:.16em;text-transform:uppercase;margin-top:14px;
+    background:none;border:1px solid rgba(237,233,224,.4);color:var(--paper);
+    padding:11px 18px;cursor:pointer;
+  }
+
+  :focus-visible{outline:2px solid #EDE9E0;outline-offset:3px}
+
+  @media (min-width:760px){
+    #label{left:auto;right:0;width:var(--label-w);bottom:0;top:0;
+      justify-content:flex-end;background:linear-gradient(to left,rgba(8,7,6,.9),transparent);
+      padding:40px 36px calc(40px + env(safe-area-inset-bottom))}
+    .accession .place{margin-left:0;text-align:left;width:100%}
+    #entry{left:auto;width:var(--label-w);transform:translateX(101%)}
+    #entry.open{transform:translateX(0)}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .plate{animation:none}
+    #entry{transition:none}
+  }
+</style>
+</head>
+<body>
+
+<div id="stage"></div>
+<div id="veil"></div>
+
+<div id="label" hidden>
+  <div>
+    <div class="eyebrow" id="l-eyebrow">On view today</div>
+  </div>
+  <div>
+    <div class="artist" id="l-artist"></div>
+    <div class="title" id="l-title"></div>
+    <div class="medium" id="l-medium"></div>
+  </div>
+  <div class="accession">
+    <span class="temp" id="l-temp"></span>
+    <span class="cond" id="l-cond"></span>
+    <span class="place" id="l-place"></span>
+  </div>
+</div>
+
+<div id="entry">
+  <div class="eyebrow">Catalogue entry</div>
+  <h2 id="e-title"></h2>
+  <dl class="rows" id="e-rows"></dl>
+  <p class="why" id="e-why"></p>
+  <div class="foot">
+    <span id="e-src">Open-Meteo · Wikimedia</span>
+    <button id="e-next" type="button">Rehang</button>
+  </div>
+</div>
+
+<div id="status">
+  <div>
+    <div class="beat" id="s-beat">Hanging the work…</div>
+    <div id="s-sub" style="margin-top:10px"></div>
+    <div id="s-act"></div>
+  </div>
+</div>
+
+<script>
+/* ------------------------------------------------------------------
+   The collection. Each work is looked up on Wikipedia at runtime, so
+   nothing here is a brittle image URL. `search` is the fallback if the
+   article title has moved.
+   Buckets: clear partly overcast fog drizzle rain downpour snow storm
+   Optional: day / night / warm / cold
+-------------------------------------------------------------------*/
+const COLLECTION = [
+  { wiki:"The Hunters in the Snow", artist:"Pieter Bruegel the Elder", title:"The Hunters in the Snow", year:1565,
+    medium:"Oil on panel", buckets:["snow"], why:"Deep snow, flat light, and everyone walking home slower than they meant to." },
+  { wiki:"The Magpie (painting)", artist:"Claude Monet", title:"The Magpie", year:1869, search:"The Magpie Monet painting",
+    medium:"Oil on canvas", buckets:["snow"], why:"Fresh snow under a low sun — the shade in it is blue, not grey." },
+  { wiki:"Snow at Louveciennes", artist:"Alfred Sisley", title:"Snow at Louveciennes", year:1878, search:"Snow at Louveciennes Sisley",
+    medium:"Oil on canvas", buckets:["snow","drizzle"], why:"Snow falling on a street that still has to be walked down." },
+
+  { wiki:"Paris Street; Rainy Day", artist:"Gustave Caillebotte", title:"Paris Street; Rainy Day", year:1877,
+    medium:"Oil on canvas", buckets:["drizzle","rain"], why:"Steady city rain. Umbrella weather, not shelter weather." },
+  { wiki:"Sudden Shower over Shin-Ōhashi bridge and Atake", artist:"Utagawa Hiroshige", title:"Sudden Shower over Shin-Ōhashi Bridge and Atake", year:1857,
+    search:"Sudden Shower over Shin-Ohashi bridge and Atake Hiroshige",
+    medium:"Woodblock print", buckets:["rain","downpour"], why:"Rain drawn as straight lines, because that's what it does when it means it." },
+  { wiki:"Rain, Steam and Speed – The Great Western Railway", artist:"J. M. W. Turner", title:"Rain, Steam and Speed", year:1844,
+    search:"Rain Steam and Speed Turner", medium:"Oil on canvas", buckets:["rain","downpour","fog"],
+    why:"Weather and everything in it dissolved into the same wet light." },
+
+  { wiki:"Wanderer above the Sea of Fog", artist:"Caspar David Friedrich", title:"Wanderer above the Sea of Fog", year:1818,
+    medium:"Oil on canvas", buckets:["fog"], why:"Visibility: poor. Atmosphere: excellent." },
+  { wiki:"The Houses of Parliament (Monet series)", artist:"Claude Monet", title:"The Houses of Parliament", year:1904,
+    search:"Houses of Parliament Monet series", medium:"Oil on canvas", buckets:["fog","overcast"],
+    why:"London fog, painted by someone who thought it was the best thing about the city." },
+
+  { wiki:"The Tempest (Giorgione)", artist:"Giorgione", title:"The Tempest", year:1508, search:"The Tempest Giorgione painting",
+    medium:"Oil on canvas", buckets:["storm"], why:"The lightning has already happened. Everyone is pretending not to have noticed." },
+  { wiki:"The Great Day of His Wrath", artist:"John Martin", title:"The Great Day of His Wrath", year:1853,
+    medium:"Oil on canvas", buckets:["storm"], why:"Slightly more than the forecast strictly warrants." },
+  { wiki:"The Great Wave off Kanagawa", artist:"Katsushika Hokusai", title:"The Great Wave off Kanagawa", year:1831,
+    medium:"Woodblock print", buckets:["storm","downpour"], why:"Wind with intent." },
+  { wiki:"Salisbury Cathedral from the Meadows", artist:"John Constable", title:"Salisbury Cathedral from the Meadows", year:1831,
+    search:"Salisbury Cathedral from the Meadows Constable", medium:"Oil on canvas", buckets:["storm","overcast"],
+    why:"A storm clearing, with a rainbow thrown in as compensation." },
+
+  { wiki:"The Gleaners", artist:"Jean-François Millet", title:"The Gleaners", year:1857,
+    medium:"Oil on canvas", buckets:["overcast"], why:"Flat, even, shadowless light. Nothing dramatic, nothing to see." },
+  { wiki:"The Angelus (painting)", artist:"Jean-François Millet", title:"The Angelus", year:1859, search:"The Angelus Millet painting",
+    medium:"Oil on canvas", buckets:["overcast"], night:false, why:"Grey going gold at the edges, right at the end of the day." },
+
+  { wiki:"The Hay Wain", artist:"John Constable", title:"The Hay Wain", year:1821,
+    medium:"Oil on canvas", buckets:["partly"], why:"English bright-and-cloudy. Constable painted skies like weather reports." },
+  { wiki:"Woman with a Parasol – Madame Monet and Her Son", artist:"Claude Monet", title:"Woman with a Parasol", year:1875,
+    search:"Woman with a Parasol Madame Monet", medium:"Oil on canvas", buckets:["partly","clear"], temp:"warm",
+    why:"Enough breeze to move a scarf, enough sun to need the parasol." },
+  { wiki:"The Harvesters (painting)", artist:"Pieter Bruegel the Elder", title:"The Harvesters", year:1565, search:"The Harvesters Bruegel",
+    medium:"Oil on panel", buckets:["partly","clear"], temp:"warm", why:"The kind of heat you lie down under a tree about." },
+
+  { wiki:"A Sunday Afternoon on the Island of La Grande Jatte", artist:"Georges Seurat", title:"A Sunday Afternoon on the Island of La Grande Jatte", year:1886,
+    medium:"Oil on canvas", buckets:["clear"], day:true, temp:"warm", why:"Full sun, no wind, everybody outside and slightly still." },
+  { wiki:"Bathers at Asnières", artist:"Georges Seurat", title:"Bathers at Asnières", year:1884, search:"Bathers at Asnieres Seurat",
+    medium:"Oil on canvas", buckets:["clear"], day:true, temp:"warm", why:"Hot enough to get in the river about it." },
+  { wiki:"Wheat Field with Cypresses", artist:"Vincent van Gogh", title:"Wheat Field with Cypresses", year:1889,
+    medium:"Oil on canvas", buckets:["clear","partly"], day:true, why:"Blue sky with the clouds still moving through it." },
+  { wiki:"Impression, Sunrise", artist:"Claude Monet", title:"Impression, Sunrise", year:1872,
+    medium:"Oil on canvas", buckets:["clear","fog","overcast"], day:true, temp:"cold",
+    why:"Cold early light through haze — the painting that named a whole movement." },
+  { wiki:"The Fighting Temeraire", artist:"J. M. W. Turner", title:"The Fighting Temeraire", year:1839,
+    medium:"Oil on canvas", buckets:["clear","partly","overcast"], day:true, why:"The last hour of daylight, doing the most." },
+
+  { wiki:"The Starry Night", artist:"Vincent van Gogh", title:"The Starry Night", year:1889,
+    medium:"Oil on canvas", buckets:["clear","partly"], day:false, why:"Clear night sky, wind you can see." },
+  { wiki:"Starry Night Over the Rhône", artist:"Vincent van Gogh", title:"Starry Night Over the Rhône", year:1888,
+    search:"Starry Night Over the Rhone", medium:"Oil on canvas", buckets:["clear"], day:false,
+    why:"Still, cold, clear — the water isn't moving either." },
+  { wiki:"Café Terrace at Night", artist:"Vincent van Gogh", title:"Café Terrace at Night", year:1888, search:"Cafe Terrace at Night van Gogh",
+    medium:"Oil on canvas", buckets:["clear","partly"], day:false, temp:"warm", why:"Warm enough to still be sitting outside." },
+  { wiki:"Nighthawks", artist:"Edward Hopper", title:"Nighthawks", year:1942,
+    medium:"Oil on canvas", buckets:["clear","overcast","fog"], day:false, why:"Nobody outside. It's late and the air hasn't moved." }
+];
+
+/* --------------------------- weather ---------------------------- */
+const CODES = {
+  0:["clear","clear sky"],
+  1:["clear","mainly clear"], 2:["partly","partly cloudy"], 3:["overcast","overcast"],
+  45:["fog","fog"], 48:["fog","freezing fog"],
+  51:["drizzle","light drizzle"], 53:["drizzle","drizzle"], 55:["drizzle","heavy drizzle"],
+  56:["drizzle","freezing drizzle"], 57:["drizzle","freezing drizzle"],
+  61:["rain","light rain"], 63:["rain","rain"], 65:["downpour","heavy rain"],
+  66:["rain","freezing rain"], 67:["downpour","freezing rain"],
+  71:["snow","light snow"], 73:["snow","snow"], 75:["snow","heavy snow"], 77:["snow","snow grains"],
+  80:["rain","rain showers"], 81:["rain","rain showers"], 82:["downpour","violent showers"],
+  85:["snow","snow showers"], 86:["snow","heavy snow showers"],
+  95:["storm","thunderstorm"], 96:["storm","thunderstorm with hail"], 99:["storm","thunderstorm with hail"]
+};
+const FALLBACK = { lat:51.5074, lon:-0.1278, name:"London" };
+
+const $ = s => document.querySelector(s);
+const stage = $("#stage"), statusEl = $("#status");
+let state = null, shown = [], current = null;
+
+function setStatus(beat, sub, action){
+  statusEl.classList.remove("gone");
+  $("#s-beat").textContent = beat;
+  $("#s-sub").textContent = sub || "";
+  $("#s-act").innerHTML = "";
+  if(action){
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = action.label;
+    b.addEventListener("click", action.fn);
+    $("#s-act").appendChild(b);
+  }
+}
+
+function locate(){
+  return new Promise(resolve => {
+    if(!navigator.geolocation) return resolve(FALLBACK);
+    const done = pos => resolve({ lat:pos.coords.latitude, lon:pos.coords.longitude, name:null });
+    navigator.geolocation.getCurrentPosition(done, () => resolve(FALLBACK),
+      { timeout:8000, maximumAge:600000 });
+  });
+}
+
+async function placeName(lat, lon){
+  try{
+    const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+    if(!r.ok) throw 0;
+    const j = await r.json();
+    return j.locality || j.city || j.principalSubdivision || null;
+  }catch{ return null; }
+}
+
+async function getWeather(lat, lon){
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+    + `&current=temperature_2m,apparent_temperature,is_day,weather_code,wind_speed_10m,relative_humidity_2m`
+    + `&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
+  const r = await fetch(url);
+  if(!r.ok) throw new Error("weather");
+  return r.json();
+}
+
+/* ------------------------- image lookup ------------------------- */
+const upscale = u => u ? u.replace(/\/\d+px-/, "/1600px-") : null;
+
+async function resolveImage(work){
+  try{
+    const r = await fetch("https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(work.wiki));
+    if(r.ok){
+      const j = await r.json();
+      const src = upscale(j.thumbnail && j.thumbnail.source) || (j.originalimage && j.originalimage.source);
+      if(src) return src;
+    }
+  }catch{}
+  try{
+    const q = encodeURIComponent(work.search || `${work.title} ${work.artist} painting`);
+    const r = await fetch("https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*"
+      + `&generator=search&gsrsearch=${q}&gsrlimit=1&prop=pageimages&piprop=original|thumbnail&pithumbsize=1600`);
+    if(r.ok){
+      const j = await r.json();
+      const pages = j.query && j.query.pages;
+      if(pages){
+        const p = Object.values(pages)[0];
+        const src = (p.thumbnail && p.thumbnail.source) || (p.original && p.original.source);
+        if(src) return src;
+      }
+    }
+  }catch{}
+  return null;
+}
+
+const preload = src => new Promise((res, rej) => {
+  const i = new Image();
+  i.onload = () => res(src); i.onerror = rej; i.src = src;
+});
+
+/* --------------------------- curation --------------------------- */
+function tempBand(c){ return c >= 22 ? "warm" : c <= 4 ? "cold" : "mild"; }
+
+function pick(bucket, isDay, band){
+  let pool = COLLECTION.filter(w => w.buckets.includes(bucket));
+  const strict = pool.filter(w =>
+    (w.day === undefined || w.day === isDay) &&
+    (w.temp === undefined || w.temp === band));
+  if(strict.length) pool = strict;
+  else {
+    const byLight = pool.filter(w => w.day === undefined || w.day === isDay);
+    if(byLight.length) pool = byLight;
+  }
+  if(!pool.length) pool = COLLECTION.filter(w => w.day === undefined || w.day === isDay);
+  const fresh = pool.filter(w => !shown.includes(w.wiki));
+  const from = fresh.length ? fresh : pool;
+  return from[Math.floor(Math.random() * from.length)];
+}
+
+/* ----------------------------- hang ----------------------------- */
+async function hang(work){
+  const src = await resolveImage(work);
+  if(!src) throw new Error("no image");
+  await preload(src);
+
+  const plate = document.createElement("div");
+  plate.className = "plate";
+  plate.style.backgroundImage = `url("${src}")`;
+  stage.appendChild(plate);
+  requestAnimationFrame(() => plate.classList.add("on"));
+  setTimeout(() => { while(stage.children.length > 1) stage.removeChild(stage.firstChild); }, 1800);
+
+  current = work;
+  shown.push(work.wiki);
+  if(shown.length > 8) shown.shift();
+
+  const w = state.w.current, d = state.w.daily;
+  $("#l-artist").textContent = work.artist;
+  $("#l-title").textContent = work.title;
+  $("#l-medium").textContent = `${work.medium}, ${work.year}`;
+  $("#l-temp").textContent = Math.round(w.temperature_2m) + "°";
+  $("#l-cond").textContent = state.label;
+  $("#l-place").textContent = state.place || "";
+  $("#l-eyebrow").textContent = w.is_day ? "On view today" : "On view tonight";
+  $("#label").hidden = false;
+
+  $("#e-title").textContent = work.title;
+  $("#e-why").textContent = work.why;
+  $("#e-rows").innerHTML = [
+    ["Artist", work.artist],
+    ["Painted", work.year],
+    ["Medium", work.medium],
+    ["Conditions", state.label],
+    ["Temperature", Math.round(w.temperature_2m) + "°C"],
+    ["Feels like", Math.round(w.apparent_temperature) + "°C"],
+    ["Today's range", `${Math.round(d.temperature_2m_min[0])}° – ${Math.round(d.temperature_2m_max[0])}°`],
+    ["Wind", Math.round(w.wind_speed_10m) + " km/h"],
+    ["Humidity", w.relative_humidity_2m + "%"],
+    ["Location", state.place || `${state.lat.toFixed(2)}, ${state.lon.toFixed(2)}`]
+  ].map(([k,v]) => `<div class="row"><dt>${k}</dt><dd>${v}</dd></div>`).join("");
+
+  statusEl.classList.add("gone");
+}
+
+async function rehang(){
+  const tries = [...COLLECTION].sort(() => Math.random() - .5);
+  const first = pick(state.bucket, !!state.w.current.is_day, state.band);
+  for(const work of [first, ...tries]){
+    try{ await hang(work); return; }catch{}
+  }
+  setStatus("The wall is bare.", "Couldn't load any artwork just now.",
+    { label:"Try again", fn:rehang });
+}
+
+async function start(){
+  setStatus("Reading the sky…");
+  const loc = await locate();
+  try{
+    const [w, place] = await Promise.all([
+      getWeather(loc.lat, loc.lon),
+      loc.name ? Promise.resolve(loc.name) : placeName(loc.lat, loc.lon)
+    ]);
+    const code = w.current.weather_code;
+    const [bucket, label] = CODES[code] || ["overcast","cloud"];
+    state = { w, lat:loc.lat, lon:loc.lon, place, bucket, label,
+              band: tempBand(w.current.temperature_2m) };
+    setStatus("Hanging the work…");
+    await rehang();
+  }catch(e){
+    setStatus("No forecast.", "Couldn't reach the weather service.",
+      { label:"Try again", fn:start });
+  }
+}
+
+/* ------------------------- interaction -------------------------- */
+const entry = $("#entry");
+$("#label").addEventListener("click", () => entry.classList.add("open"));
+entry.addEventListener("click", e => { if(e.target.id !== "e-next") entry.classList.remove("open"); });
+$("#e-next").addEventListener("click", e => { e.stopPropagation(); entry.classList.remove("open"); rehang(); });
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape") entry.classList.remove("open");
+  if(e.key === "r" && state) rehang();
+});
+document.addEventListener("visibilitychange", () => {
+  if(!document.hidden && state && Date.now() - (state.at || 0) > 900000){ state.at = Date.now(); start(); }
+});
+
+start();
+</script>
+</body>
+</html>
